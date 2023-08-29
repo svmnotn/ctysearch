@@ -8,7 +8,9 @@ mod parse;
 const EXAMPLE: &[u8] = include_bytes!("../example.h");
 
 fn main() {
+    // TODO: take this from cmd args
     let search = "Tes_t (uint8, uint)";
+    // TODO: take the path from cmd args, load the file from path
     let mut fns =
         parse::find_all(PathBuf::from("example.h"), EXAMPLE).expect("Example should work");
 
