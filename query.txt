@@ -1,0 +1,87 @@
+[
+    (declaration
+        type: (_) @ret
+        declarator: [
+            (function_declarator
+                declarator: (identifier) @name
+                parameters: (parameter_list
+                    (parameter_declaration
+                        type: (_) @param
+                    )*
+                )
+            ) 
+            (pointer_declarator 
+                declarator: (function_declarator
+                    declarator: (identifier) @name
+                    parameters: (parameter_list
+                        (parameter_declaration
+                            type: (_) @param
+                        )*
+                    )
+                )
+            )
+        ]
+    ) @dcl
+    (field_declaration
+        type: (_) @ret
+        declarator: [
+            (function_declarator
+                declarator: (parenthesized_declarator 
+                    (pointer_declarator
+                        declarator: (field_identifier) @name
+                    )
+                )
+                parameters: (parameter_list
+                    (parameter_declaration
+                        type: (_) @param
+                    )*
+                )
+            ) 
+            (pointer_declarator 
+                declarator: (function_declarator
+                    declarator: (parenthesized_declarator 
+                        (pointer_declarator
+                            declarator: (field_identifier) @name
+                        )
+                    )
+                    parameters: (parameter_list
+                        (parameter_declaration
+                            type: (_) @param
+                        )*
+                    )
+                )
+            )
+        ]
+    ) @dcl
+    (type_definition
+        type: (_) @ret
+        declarator: [
+            (function_declarator
+                declarator: (parenthesized_declarator 
+                    (pointer_declarator
+                        declarator: (type_identifier) @name
+                    )
+                )
+                parameters: (parameter_list
+                    (parameter_declaration
+                        type: (_) @param
+                    )*
+                )
+            ) 
+            (pointer_declarator 
+                declarator: (function_declarator
+                    declarator: (parenthesized_declarator 
+                        (pointer_declarator
+                            declarator: (type_identifier) @name
+                        )
+                    )
+                    parameters: (parameter_list
+                        (parameter_declaration
+                            type: (_) @param
+                        )*
+                    )
+                )
+            )
+        ]
+    ) @dcl
+]
