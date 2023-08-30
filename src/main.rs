@@ -1,22 +1,24 @@
 use edit_distance::edit_distance;
-use std::path::PathBuf;
+use std::fs::read;
 
+mod args;
 mod error;
 mod function;
 mod parse;
 
-const EXAMPLE: &[u8] = include_bytes!("../example.h");
+fn main() -> Result<(), error::Error> {
+    let args = args::parse_args()?;
 
-fn main() {
-    // TODO: take this from cmd args
-    let search = "Tes_t (uint8, uint)";
-    // TODO: take the path from cmd args, load the file from path
-    let mut fns =
-        parse::find_all(PathBuf::from("example.h"), EXAMPLE).expect("Example should work");
+    let search = args.search.as_str();
+    let path = args.header.as_path();
+    let text = read(path)?;
+    let mut fns = parse::find_all(path, &text)?;
 
-    fns.sort_by_cached_key(|f| edit_distance(&f.cannonize(), search));
+    fns.sort_by_cached_key(|f| edit_distance(&f.canonicalize(), search));
 
-    for f in fns {
+    for f in fns.iter().take(args.limit) {
         println!("{f}");
     }
+
+    Ok(())
 }

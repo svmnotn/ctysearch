@@ -1,8 +1,11 @@
-use crate::{error::Error, function::Function};
-use std::path::PathBuf;
+use crate::{
+    error::Error,
+    function::{Function, FunctionBuilder},
+};
+use std::path::Path;
 use tree_sitter::{Parser, Query, QueryCapture, QueryCursor, QueryMatch, Tree};
 
-fn parse(text: &impl AsRef<[u8]>) -> Result<Tree, Error> {
+fn parse(text: &[u8]) -> Result<Tree, Error> {
     let mut parser = Parser::new();
     parser
         .set_language(tree_sitter_c::language())
@@ -10,88 +13,89 @@ fn parse(text: &impl AsRef<[u8]>) -> Result<Tree, Error> {
     parser.parse(text, None).ok_or(Error::FailedToParse)
 }
 
-const QUERY: &str = include_str!("../query.txt");
+fn query() -> Result<Query, Error> {
+    const QUERY: &str = include_str!("../query.txt");
 
-pub fn find_all(translation_unit: PathBuf, text: impl AsRef<[u8]>) -> Result<Vec<Function>, Error> {
-    let tree = parse(&text)?;
-    let query = Query::new(tree_sitter_c::language(), QUERY).map_err(Error::FailedToCreateQuery)?;
+    Query::new(tree_sitter_c::language(), QUERY).map_err(Error::FailedToCreateQuery)
+}
+
+pub fn find_all<'a>(
+    translation_unit: &'a Path,
+    text: &'a [u8],
+) -> Result<Vec<Function<'a>>, Error> {
+    let tree = parse(text)?;
+    let query = query()?;
     let mut cursor = QueryCursor::new();
     let captured = cursor.matches(&query, tree.root_node(), text.as_ref());
 
     let parts = query.capture_names();
-    let mut stack = Vec::new();
+    let mut fns = Vec::new();
 
     for QueryMatch { captures, .. } in captured {
+        let mut fn_builder = None;
+
         for QueryCapture { node, index } in captures {
             match parts[*index as usize].as_str() {
                 "dcl" => {
-                    stack.push(Function {
-                        translation_unit: translation_unit.clone(),
-                        pos: node.start_position(),
-                        ret: String::new(),
-                        name: String::new(),
-                        args: Vec::new(),
-                    });
+                    fn_builder.replace(FunctionBuilder::new(
+                        translation_unit,
+                        node.start_position(),
+                    ));
                 }
 
                 "ret" => {
-                    let mut f = stack.pop().ok_or(Error::FoundReturnBeforeDeclaration)?;
-
-                    f.ret.push_str(
-                        node.utf8_text(text.as_ref())
-                            .map_err(Error::FailedToReadUtf8)?,
-                    );
-                    if let Some(sibling) = node.next_named_sibling() {
-                        if sibling.kind() == "pointer_declarator" {
-                            f.ret.push('*');
-                        }
-                    }
-
-                    stack.push(f);
+                    fn_builder
+                        .as_mut()
+                        .ok_or(Error::FoundReturnBeforeDeclaration)?
+                        .set_return(
+                            node.utf8_text(text.as_ref())
+                                .map_err(Error::FailedToReadUtf8)?,
+                            node.next_named_sibling()
+                                .map(|sibling| sibling.kind() == "pointer_declarator")
+                                .unwrap_or(false),
+                        );
                 }
 
                 "name" => {
-                    let mut f = stack.pop().ok_or(Error::FoundNameBeforeDeclaration)?;
-
-                    f.name = node
-                        .utf8_text(text.as_ref())
-                        .map_err(Error::FailedToReadUtf8)?
-                        .to_owned();
-
-                    stack.push(f);
+                    fn_builder
+                        .as_mut()
+                        .ok_or(Error::FoundNameBeforeDeclaration)?
+                        .set_name(
+                            node.utf8_text(text.as_ref())
+                                .map_err(Error::FailedToReadUtf8)?,
+                        );
                 }
 
                 "param" => {
-                    let mut f = stack.pop().ok_or(Error::FoundParameterBeforeDeclaration)?;
+                    let f = fn_builder
+                        .as_mut()
+                        .ok_or(Error::FoundParameterBeforeDeclaration)?;
 
-                    let mut arg = String::from(
+                    f.add_arg(
                         node.utf8_text(text.as_ref())
                             .map_err(Error::FailedToReadUtf8)?,
+                        node.next_named_sibling()
+                            .map(|sibling| sibling.kind() == "pointer_declarator")
+                            .unwrap_or(false),
                     );
-                    if let Some(sibling) = node.next_named_sibling() {
-                        if sibling.kind() == "pointer_declarator" {
-                            arg.push('*');
-                        }
-                    }
-                    f.args.push(arg);
-                    let mut sibling = node.parent().unwrap().next_named_sibling();
+
+                    let mut sibling = node
+                        .parent()
+                        .expect("No parent for param node?")
+                        .next_named_sibling();
                     while let Some(node) = sibling {
-                        let child = node.named_child(0).unwrap();
-                        let mut arg = String::from(
+                        let child = node.named_child(0).expect("Param node has no children?");
+                        f.add_arg(
                             child
                                 .utf8_text(text.as_ref())
                                 .map_err(Error::FailedToReadUtf8)?,
+                            child
+                                .next_named_sibling()
+                                .map(|sibling| sibling.kind() == "pointer_declarator")
+                                .unwrap_or(false),
                         );
-                        if let Some(sibling) = child.next_named_sibling() {
-                            if sibling.kind() == "pointer_declarator" {
-                                arg.push('*');
-                            }
-                        }
-                        f.args.push(arg);
                         sibling = node.next_named_sibling();
                     }
-
-                    stack.push(f);
                 }
 
                 _ => unreachable!(
@@ -99,7 +103,10 @@ pub fn find_all(translation_unit: PathBuf, text: impl AsRef<[u8]>) -> Result<Vec
                 ),
             }
         }
+
+        let f = fn_builder.expect("no query found").build()?;
+        fns.push(f);
     }
 
-    Ok(stack)
+    Ok(fns)
 }
