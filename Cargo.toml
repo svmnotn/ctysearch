@@ -10,7 +10,7 @@ readme = "README.md"
 description = "Search for a given function definition in a C header file"
 
 [dependencies]
-tree-sitter = "0.21.0"
+tree-sitter = "0.22.1"
 tree-sitter-c = "0.20.8"
 edit-distance = "2.1.0"
 lexopt = "0.3.0"
