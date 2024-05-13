@@ -23,7 +23,7 @@ version = "1.0.0"
 dependencies = [
  "edit-distance",
  "lexopt",
- "tree-sitter 0.22.5",
+ "tree-sitter",
  "tree-sitter-c",
 ]
 
@@ -76,16 +76,6 @@ checksum = "c08c74e62047bb2de4ff487b251e4a92e24f48745648451635cec7d591162d9f"
 
 [[package]]
 name = "tree-sitter"
-version = "0.20.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e747b1f9b7b931ed39a548c1fae149101497de3c1fc8d9e18c62c1a66c683d3d"
-dependencies = [
- "cc",
- "regex",
-]
-
-[[package]]
-name = "tree-sitter"
 version = "0.22.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "688200d842c76dd88f9a7719ecb0483f79f5a766fb1c100756d5d8a059abc71b"
@@ -96,10 +86,10 @@ dependencies = [
 
 [[package]]
 name = "tree-sitter-c"
-version = "0.20.8"
+version = "0.21.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4bbd5f3d8658c08581f8f2adac6c391c2e9fa00fe9246bf6c5f52213b9cc6b72"
+checksum = "b4f0e5c383fd633a792eb8878367dc9d4a3c0e788bad5dcc84c200332ed1b8f2"
 dependencies = [
  "cc",
- "tree-sitter 0.20.10",
+ "tree-sitter",
 ]
