@@ -1,7 +1,7 @@
 # C-Type-Search (ctysearch)
 
-Search for a C function definition in a given header file by return/parameter
-types, using fuzzy matching. Useful when you remember a signature shape
+Search for a C function definition in a given header file by return and
+parameter types. Useful when you remember a signature shape
 (e.g. "returns a `Test_t*` and takes a `Test_t*`") but not the exact name.
 
 ## Installation
@@ -23,11 +23,11 @@ Usage: ctysearch [-h|--help] [-l|--limit=NUM] [-f|--header=C_HEADER_FILE] FUNCTI
 ```
 
 - `FUNCTION` is a type signature to search for, written as
-  `RETURN_TYPE (PARAM1, PARAM2, ...)` — names don't matter, only types.
+  `RETURN_TYPE (PARAM1, PARAM2, ...)`. Names don't matter, only types.
   Examples: `"void ()"`, `"uint8_t* (uint8_t)"`,
   `"struct Test_t* (struct Test_t, uint8_t*)"`.
-- Results are ranked by Levenshtein edit distance between your query and each
-  function's canonical signature, closest first.
+- ctysearch ranks results by Levenshtein edit distance between your query and
+  each function's canonical signature, closest first.
 - Each result line looks like
   `FILE:ROW:COL: NAME :: SIGNATURE`, e.g.
   `example.h:5:1: test1 :: void (uint8_t, uint8_t*)`
@@ -35,13 +35,13 @@ Usage: ctysearch [-h|--help] [-l|--limit=NUM] [-f|--header=C_HEADER_FILE] FUNCTI
 
 ## How matching works
 
-1. The header is parsed with [tree-sitter-c](https://github.com/tree-sitter/tree-sitter-c).
-2. Plain declarations, function-pointer `typedef`s, and struct-member function
-   pointers are all collected.
-3. Each function is canonicalized to `RETURN (ARGS)` — e.g. `test1` becomes
-   `void (uint8_t, uint8_t*)`.
-4. Candidates are sorted by `edit_distance(canonical, query)` and the first
-   `--limit` (default 10) are printed.
+1. ctysearch parses the header with [tree-sitter-c](https://github.com/tree-sitter/tree-sitter-c).
+2. It collects plain declarations, function-pointer `typedef`s, and
+   struct-member function pointers.
+3. It canonicalizes each function to `RETURN (ARGS)`. For example, `test1`
+   becomes `void (uint8_t, uint8_t*)`.
+4. It sorts candidates by `edit_distance(canonical, query)` and prints the
+   first `--limit` (default 10).
 
 Because matching is fuzzy, an approximate query still finds the right
 function (see Example 5).
@@ -130,9 +130,9 @@ example.h:5:1: test1 :: void (uint8_t, uint8_t*)
 ```
 
 `struct`/`enum` qualifiers are part of the signature, so `test10` (plain),
-`test11_t` (typedef), and `test12` (struct member) all rank highly.
+`test11_t` (typedef), and `test12` (struct member) all appear near the top.
 
-### 5. Fuzzy matching forgives small mistakes
+### 5. Approximate queries still match
 
 ```sh
 ctysearch -f example.h "Test_t (uint8_t, uint8_t)"
