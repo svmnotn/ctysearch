@@ -25,10 +25,10 @@ impl<'a> Display for Args<'a> {
             0 => Ok(()),
             1 => write!(f, "{}", self.0[0]),
             _ => {
-                for i in 0..self.0.len() - 2 {
+                for i in 0..self.0.len() - 1 {
                     write!(f, "{}, ", self.0[i])?;
                 }
-                write!(f, "{}, ", self.0[self.0.len() - 1])
+                write!(f, "{}", self.0[self.0.len() - 1])
             }
         }
     }
@@ -104,5 +104,104 @@ impl<'a> Display for Function<'a> {
             ret = self.ret,
             args = self.args
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::Path;
+
+    fn point(row: usize, column: usize) -> Point {
+        Point { row, column }
+    }
+
+    #[test]
+    fn type_display_without_pointer() {
+        let path = Path::new("test.h");
+        let mut builder = FunctionBuilder::new(path, point(0, 0));
+        builder.set_return("void", false);
+        builder.set_name("f");
+        let f = builder.build().unwrap();
+        assert_eq!(f.canonicalize(), "void ()");
+    }
+
+    #[test]
+    fn type_display_with_pointer_return() {
+        let path = Path::new("test.h");
+        let mut builder = FunctionBuilder::new(path, point(0, 0));
+        builder.set_return("uint8_t", true);
+        builder.set_name("test");
+        builder.add_arg("uint8_t", false);
+        let f = builder.build().unwrap();
+        assert_eq!(f.canonicalize(), "uint8_t* (uint8_t)");
+    }
+
+    #[test]
+    fn args_display_zero_one_two_three() {
+        let path = Path::new("test.h");
+
+        let mut no_args = FunctionBuilder::new(path, point(0, 0));
+        no_args.set_return("void", false);
+        no_args.set_name("no_args");
+        assert_eq!(no_args.build().unwrap().canonicalize(), "void ()");
+
+        let mut one_arg = FunctionBuilder::new(path, point(0, 0));
+        one_arg.set_return("void", false);
+        one_arg.set_name("one_arg");
+        one_arg.add_arg("void", false);
+        assert_eq!(one_arg.build().unwrap().canonicalize(), "void (void)");
+
+        let mut two_args = FunctionBuilder::new(path, point(0, 0));
+        two_args.set_return("void", false);
+        two_args.set_name("two_args");
+        two_args.add_arg("uint8_t", false);
+        two_args.add_arg("uint8_t", true);
+        assert_eq!(
+            two_args.build().unwrap().canonicalize(),
+            "void (uint8_t, uint8_t*)"
+        );
+
+        let mut three_args = FunctionBuilder::new(path, point(0, 0));
+        three_args.set_return("int", false);
+        three_args.set_name("three_args");
+        three_args.add_arg("int", false);
+        three_args.add_arg("char", true);
+        three_args.add_arg("void", true);
+        assert_eq!(
+            three_args.build().unwrap().canonicalize(),
+            "int (int, char*, void*)"
+        );
+    }
+
+    #[test]
+    fn function_display_includes_location_name_and_signature() {
+        let path = Path::new("example.h");
+        let mut builder = FunctionBuilder::new(path, point(4, 0));
+        builder.set_return("void", false);
+        builder.set_name("test1");
+        builder.add_arg("uint8_t", false);
+        builder.add_arg("uint8_t", true);
+        let f = builder.build().unwrap();
+        assert_eq!(
+            f.to_string(),
+            "example.h:5:1: test1 :: void (uint8_t, uint8_t*)"
+        );
+    }
+
+    #[test]
+    fn builder_fails_without_return_type() {
+        let path = Path::new("test.h");
+        let mut builder = FunctionBuilder::new(path, point(0, 0));
+        builder.set_name("f");
+        assert!(matches!(builder.build(), Err(Error::NeverFoundAReturnType)));
+    }
+
+    #[test]
+    fn builder_fails_without_name() {
+        let path = Path::new("test.h");
+        let mut builder = FunctionBuilder::new(path, point(0, 0));
+        builder.set_return("void", false);
+        assert!(matches!(builder.build(), Err(Error::NeverFoundAName)));
     }
 }
