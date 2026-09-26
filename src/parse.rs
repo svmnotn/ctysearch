@@ -3,12 +3,13 @@ use crate::{
     function::{Function, FunctionBuilder},
 };
 use std::path::Path;
-use tree_sitter::{Parser, Query, QueryCapture, QueryCursor, QueryMatch, Tree};
+use tree_sitter::{Parser, Query, QueryCursor, StreamingIterator, Tree};
 
 fn parse(text: &[u8]) -> Result<Tree, Error> {
     let mut parser = Parser::new();
+    let language = tree_sitter_c::LANGUAGE.into();
     parser
-        .set_language(tree_sitter_c::language())
+        .set_language(&language)
         .map_err(Error::FailedToSetParserLanguage)?;
     parser.parse(text, None).ok_or(Error::FailedToParse)
 }
@@ -16,7 +17,8 @@ fn parse(text: &[u8]) -> Result<Tree, Error> {
 fn query() -> Result<Query, Error> {
     const QUERY: &str = include_str!("../query.txt");
 
-    Query::new(tree_sitter_c::language(), QUERY).map_err(Error::FailedToCreateQuery)
+    let language = tree_sitter_c::LANGUAGE.into();
+    Query::new(&language, QUERY).map_err(Error::FailedToCreateQuery)
 }
 
 pub fn find_all<'a>(
@@ -26,16 +28,18 @@ pub fn find_all<'a>(
     let tree = parse(text)?;
     let query = query()?;
     let mut cursor = QueryCursor::new();
-    let captured = cursor.matches(&query, tree.root_node(), text.as_ref());
+    let mut captured = cursor.matches(&query, tree.root_node(), text.as_ref());
 
     let parts = query.capture_names();
     let mut fns = Vec::new();
 
-    for QueryMatch { captures, .. } in captured {
+    while let Some(m) = captured.next() {
         let mut fn_builder = None;
 
-        for QueryCapture { node, index } in captures {
-            match parts[*index as usize].as_str() {
+        for capture in m.captures() {
+            let node = capture.node;
+            let index = capture.index;
+            match parts[index as usize] {
                 "dcl" => {
                     fn_builder.replace(FunctionBuilder::new(
                         translation_unit,

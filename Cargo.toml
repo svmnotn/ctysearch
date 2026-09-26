@@ -3,17 +3,17 @@ name = "ctysearch"
 version = "1.0.0"
 edition = "2021"
 authors = ["Victor M. Suarez <svmnotn@gmail.com>"]
-rust-version = "1.71"
+rust-version = "1.90"
 license = "MIT"
 repository = "https://github.com/svmnotn/serial-logger/"
 readme = "README.md"
 description = "Search for a given function definition in a C header file"
 
 [dependencies]
-tree-sitter = "0.22.5"
-tree-sitter-c = "0.20.8"
-edit-distance = "2.1.0"
-lexopt = "0.3.0"
+tree-sitter = "0.27.0"
+tree-sitter-c = "0.24.2"
+edit-distance = "2.2.2"
+lexopt = "0.3.2"
 
 # The profile that 'cargo dist' will build with
 [profile.dist]
