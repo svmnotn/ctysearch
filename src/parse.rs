@@ -143,8 +143,7 @@ mod tests {
         // `example.h` is static bytes, so the borrowed `&str`s can live as
         // long as needed for the test. The translation-unit path is leaked
         // on purpose to satisfy the lifetime without filesystem access.
-        let path: &'static Path =
-            Box::leak(Box::new(Path::new("example.h").to_path_buf()));
+        let path: &'static Path = Box::leak(Box::new(Path::new("example.h").to_path_buf()));
         find_all(path, EXAMPLE).expect("example.h should parse")
     }
 
@@ -163,11 +162,28 @@ mod tests {
     #[test]
     fn finds_expected_names() {
         let fns = find_in_example();
-        let rendered = fns.iter().map(ToString::to_string).collect::<Vec<_>>().join("\n");
+        let rendered = fns
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+            .join("\n");
         for name in [
-            "test ::", "test1 ::", "test2 ::", "test3 ::", "test4_t ::", "test5_t ::",
-            "test6_t ::", "test7_t ::", "test8 ::", "test9 ::", "test10 ::",
-            "test11_t ::", "test12 ::", "test13 ::", "test14 ::", "test15 ::",
+            "test ::",
+            "test1 ::",
+            "test2 ::",
+            "test3 ::",
+            "test4_t ::",
+            "test5_t ::",
+            "test6_t ::",
+            "test7_t ::",
+            "test8 ::",
+            "test9 ::",
+            "test10 ::",
+            "test11_t ::",
+            "test12 ::",
+            "test13 ::",
+            "test14 ::",
+            "test15 ::",
         ] {
             assert!(rendered.contains(name), "missing {name} in:\n{rendered}");
         }
