@@ -60,13 +60,7 @@ fn limit_flag_caps_number_of_results() {
 fn short_and_long_flags_agree() {
     let header = example_header();
     let short = run(&["-f", &header, "-l", "2", "void ()"]);
-    let long = run(&[
-        "--header",
-        &header,
-        "--limit",
-        "2",
-        "void ()",
-    ]);
+    let long = run(&["--header", &header, "--limit", "2", "void ()"]);
     assert!(short.status.success());
     assert!(long.status.success());
     assert_eq!(short.stdout, long.stdout);

@@ -25,8 +25,8 @@ impl<'a> Display for Args<'a> {
             0 => Ok(()),
             1 => write!(f, "{}", self.0[0]),
             _ => {
-                for i in 0..self.0.len() - 1 {
-                    write!(f, "{}, ", self.0[i])?;
+                for arg in &self.0[..self.0.len() - 1] {
+                    write!(f, "{}, ", arg)?;
                 }
                 write!(f, "{}", self.0[self.0.len() - 1])
             }
